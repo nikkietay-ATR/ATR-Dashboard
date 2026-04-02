@@ -840,7 +840,7 @@
       <h2><span class="emoji">🧭</span> ATR at a Glance</h2>
       <div style="display:flex;align-items:center;gap:1rem">
         <span class="last-updated" id="snapshotUpdated">Not yet updated this month</span>
-        <select id="execMonthSelect" onchange="renderSnapshot()" style="border:1.5px solid var(--border);border-radius:6px;padding:0.3rem 0.6rem;font-size:0.78rem;font-family:'Nunito Sans',sans-serif;background:var(--cream);display:none"></select>
+        <select id="execMonthSelect" onchange="renderSnapshot(); renderDeptPulse();" style="border:1.5px solid var(--border);border-radius:6px;padding:0.3rem 0.6rem;font-size:0.78rem;font-family:'Nunito Sans',sans-serif;background:var(--cream);display:none"></select>
         <span class="panel-toggle">▾</span>
       </div>
     </div>
@@ -2161,6 +2161,7 @@ const DEPARTMENTS = [
     id: 'foster', name: 'Foster', emoji: '🐾',
     fields: [
       { key: 'dogs_foster',             label: 'Dogs in foster at end of month (from Monthly Dog Totals report)', unit: '' },
+      { key: 'dogs_fostered_month',     label: 'Total dogs fostered this month', unit: '' },
       { key: 'active_homes',            label: 'Active foster homes', unit: '' },
       { key: 'new_fosters',             label: 'New foster homes added / became active', unit: '' },
       { key: 'foster_to_adopt',         label: 'Foster-to-adopt conversions', unit: '' },
@@ -2775,7 +2776,9 @@ function renderDeptPulse() {
   grid.innerHTML = '';
   const depts = getRuntimeDepts();
 
-  const curKey  = getLastCompletedMonthKey();
+  const autoKey = getLastCompletedMonthKey();
+  const sel = document.getElementById('execMonthSelect');
+  const curKey  = (sel && sel.value) ? sel.value : autoKey;
   const prevKey = getPrevMonthKey(curKey);
   const history = store.history || {};
   const curHist  = curKey  ? (history[curKey]  || {}) : {};
@@ -3871,7 +3874,6 @@ function renderAllHands() {
     { label: 'Volunteer Hours',           deptId: 'volunteers',field: 'vol_hours',            emoji: '🤝', unit: 'hrs' },
     { label: 'Events Held',               deptId: 'events',    field: 'events_month',         emoji: '🎉' },
     { label: 'New Volunteers',            deptId: 'volunteers',field: 'new_volunteers',        emoji: '⭐' },
-    { label: 'Event Revenue',             deptId: 'events',    field: 'revenue',              emoji: '💰', prefix: '$' },
   ];
 
   ahGrid.innerHTML = bigStats.map(s => {
@@ -3918,9 +3920,9 @@ function renderAllHands() {
   if (deptHighlights) {
     const highlights = [
       { id: 'volunteers', fields: ['vol_hours','active_vols','new_volunteers'] },
-      { id: 'events',     fields: ['events_month','revenue','event_volunteers'] },
+      { id: 'events',     fields: ['events_month','event_volunteers'] },
       { id: 'comms',      fields: ['ig_followers','ig_views','ig_new_followers'] },
-      { id: 'adoptions',  fields: ['adoptions_month','returns_30day','adoption_fee_revenue'] },
+      { id: 'adoptions',  fields: ['adoptions_month','returns_30day'] },
       { id: 'foster',     fields: ['dogs_fostered_month','new_fosters'] },
     ];
     const allDepts = getRuntimeDepts();
@@ -3947,7 +3949,7 @@ function renderAllHands() {
     const yoyStats = [
       { label: 'Adoptions',       deptId: 'adoptions', field: 'adoptions_month' },
       { label: 'Volunteer Hours', deptId: 'volunteers',field: 'vol_hours' },
-      { label: 'Events Revenue',  deptId: 'events',    field: 'revenue' },
+      { label: 'Events Held',     deptId: 'events',    field: 'events_month' },
       { label: 'New Volunteers',  deptId: 'volunteers',field: 'new_volunteers' },
     ];
     yoyEl.innerHTML = yoyStats.map(s => {
