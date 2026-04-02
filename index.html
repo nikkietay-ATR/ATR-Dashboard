@@ -840,6 +840,7 @@
       <h2><span class="emoji">🧭</span> ATR at a Glance</h2>
       <div style="display:flex;align-items:center;gap:1rem">
         <span class="last-updated" id="snapshotUpdated">Not yet updated this month</span>
+        <select id="execMonthSelect" onchange="renderSnapshot()" style="border:1.5px solid var(--border);border-radius:6px;padding:0.3rem 0.6rem;font-size:0.78rem;font-family:'Nunito Sans',sans-serif;background:var(--cream);display:none"></select>
         <span class="panel-toggle">▾</span>
       </div>
     </div>
@@ -2257,7 +2258,7 @@ const DEPARTMENTS = [
       { key: 'content_pieces',      label: 'Pieces of content shared', unit: '' },
       { key: 'link_clicks',         label: 'Link clicks', unit: '' },
       { key: 'fb_followers',        label: 'Facebook followers', unit: '' },
-      { key: 'fb_engagement',       label: 'Facebook avg engagement', unit: '' },
+      { key: 'fb_engagement',       label: 'Total Facebook Interactions', unit: '' },
       { key: 'email_subscribers',   label: 'Email subscribers', unit: '' },
       { key: 'email_open_rate',     label: 'Email open rate %', unit: '%' },
       { key: 'website_visits',      label: 'Website visits (this month)', unit: '' },
@@ -2467,6 +2468,7 @@ document.addEventListener('DOMContentLoaded', () => {
   buildDeptEntryGrid();
   buildMoneyGrid();
   renderAll();
+  initExecMonthSelect();
   fetchFromSheets(); // pull latest data from Google Sheets if configured
   // Init analytics after a tick so DOM is ready
   setTimeout(() => {
@@ -2522,8 +2524,39 @@ function getPrevMonthKey(mk) {
   return `${m}-${y}`;
 }
 
+function initExecMonthSelect() {
+  const sel = document.getElementById('execMonthSelect');
+  if (!sel) return;
+  const history = store.history || {};
+  const now = new Date();
+  // Collect all month keys that have data, exclude future months
+  const keys = Object.keys(history).filter(k => {
+    const [m, y] = k.split('-').map(Number);
+    if (y > now.getFullYear()) return false;
+    if (y === now.getFullYear() && m > now.getMonth() + 1) return false;
+    const depts = history[k];
+    return Object.values(depts).some(d =>
+      d && Object.values(d).some(v => v !== '' && v !== null && v !== undefined)
+    );
+  });
+  if (!keys.length) { sel.style.display = 'none'; return; }
+  keys.sort((a, b) => {
+    const [am, ay] = a.split('-').map(Number);
+    const [bm, by] = b.split('-').map(Number);
+    return (by * 12 + bm) - (ay * 12 + am);
+  });
+  sel.innerHTML = keys.map(k => {
+    const [m, y] = k.split('-').map(Number);
+    return `<option value="${k}">${MONTH_NAMES[m-1]} ${y}</option>`;
+  }).join('');
+  sel.value = keys[0]; // default to most recent
+  sel.style.display = '';
+}
+
 function renderSnapshot() {
-  const curKey  = getLastCompletedMonthKey();
+  const autoKey = getLastCompletedMonthKey();
+  const sel = document.getElementById('execMonthSelect');
+  const curKey = (sel && sel.value) ? sel.value : autoKey;
   const prevKey = getPrevMonthKey(curKey);
   const history = store.history || {};
 
@@ -3004,6 +3037,7 @@ function saveDept(deptId) {
   saveStore();
   pushToSheets(deptId, key, store.history[key][deptId]);
   renderDeptPulse();
+  initExecMonthSelect();
   renderSnapshot();
 
   const ind = document.getElementById('saved-' + deptId);
@@ -3866,7 +3900,7 @@ function renderAllHands() {
     const adoptionData = monthData['adoptions'] || {};
     const fosterData   = monthData['foster']    || {};
     const steps = [
-      { label: 'Dogs in Foster',   val: fosterData['dogs_fostered_month'], emoji: '🐾' },
+      { label: 'Dogs in Foster',   val: fosterData['dogs_foster'], emoji: '🐾' },
       { label: 'Adopted',          val: adoptionData['adoptions_month'],   emoji: '🏡' },
       { label: 'Returns (<30 days)',val: adoptionData['returns_30day'],     emoji: '↩️' },
     ];
