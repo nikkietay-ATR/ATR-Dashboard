@@ -3244,7 +3244,20 @@ function buildYOYTable(years, yearData, field) {
   body.innerHTML = MONTH_NAMES.map((mName, mi) => {
     const cells = years.map(y => {
       const v = yearData[y][mi];
-      return `<td>${v !== null ? v + (field?.unit ? ' ' + field.unit : '') : '<span style="color:#ccc">—</span>'}</td>`;
+      if (v === null) return `<td><span style="color:#ccc">—</span></td>`;
+      const unit = field?.unit || '';
+      const isMonetary = unit === '' && v >= 100; // adoption fee revenue etc
+      let display;
+      if (unit === '%') {
+        display = v + '%';
+      } else if (unit === 'hrs') {
+        display = fmtNum(v) + ' hrs';
+      } else if (isMonetary && String(v).indexOf('.') === -1) {
+        display = '$' + fmtNum(v);
+      } else {
+        display = fmtNum(v) + (unit ? ' ' + unit : '');
+      }
+      return `<td>${display}</td>`;
     }).join('');
 
     let yoyCell = '';
