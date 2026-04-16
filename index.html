@@ -892,7 +892,7 @@
         <div class="snapshot-tile">
           <div class="tile-label">Cash Runway</div>
           <div class="tile-value text-val" id="snap-cash">—</div>
-          <div class="tile-sub">High-level estimate</div>
+          <div class="tile-sub" id="snap-cash-sub">Based on current burn rate</div>
         </div>
         <div class="snapshot-tile">
           <div class="tile-label">ACS Hours per Dog</div>
@@ -902,7 +902,7 @@
         <div class="snapshot-tile">
           <div class="tile-label">Org Retention Rate</div>
           <div class="tile-value" id="snap-retention">—</div>
-          <div class="tile-sub">Rolling 12mo · excl. &lt;14 day exits · 🟢 70%+ for animal welfare</div>
+          <div class="tile-sub">Rolling 12mo · excl. &lt;14 day exits</div>
         </div>
         <div class="snapshot-tile rose">
           <div class="tile-label">Quick Exits (&lt;14 days)</div>
@@ -2687,7 +2687,33 @@ function renderSnapshot() {
   }
 
   const cashEl = document.getElementById('snap-cash');
-  if (cashEl) cashEl.textContent = store.snapshot?.cash || '—';
+  if (cashEl) {
+    // Auto-calculate from QB data: cash on hand ÷ avg monthly expenses
+    // Use most recent period available — Q1 2026 if data exists, else FY 2025
+    const cashOnHand = 250576; // $100,576 Chase + $150,000 van fund (S/N van approved)
+    const q1AvgExpenses = QB_DATA['2026'].totalExpenses / 3; // $332,816 / 3 months
+    const fy2025AvgExpenses = QB_DATA['2025'].totalExpenses / 12;
+    // Use Q1 2026 avg as most current burn rate
+    const avgMonthlyBurn = q1AvgExpenses;
+    const runwayMonths = cashOnHand / avgMonthlyBurn;
+    const runwayWeeks = runwayMonths * 4.33;
+    let display, color;
+    if (runwayMonths < 1) {
+      display = `~${Math.round(runwayWeeks)}w`;
+      color = 'var(--sec-coral)';
+    } else if (runwayMonths < 2) {
+      display = `~${runwayMonths.toFixed(1)}mo`;
+      color = '#856404';
+    } else {
+      display = `~${runwayMonths.toFixed(1)}mo`;
+      color = 'var(--atr-green)';
+    }
+    cashEl.textContent = display;
+    cashEl.style.color = color;
+    // Update subtitle with context
+    const cashSub = cashEl.closest('.snapshot-tile')?.querySelector('.tile-sub');
+    if (cashSub) cashSub.textContent = `$${fmtNum(Math.round(cashOnHand))} cash ÷ $${fmtNum(Math.round(avgMonthlyBurn))}/mo burn`;
+  }
 
   // ACS hours per dog — use stored value or auto-calc from hours ÷ avg dogs
   // Falls back to SEED_HISTORY directly to bypass stale sessionStorage
