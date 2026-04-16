@@ -827,7 +827,7 @@
   <div class="nav-tab" onclick="switchTab('finance', this)">Money Rhythm</div>
   <div class="nav-tab" onclick="switchTab('allhands', this)">🎤 All-Hands View</div>
   <div class="nav-tab" onclick="switchTab('parking', this)">Parking Lot</div>
-  <div class="nav-tab" onclick="switchTab('leadernotes', this)">🔒 Leadership Notes</div>
+  <div class="nav-tab" onclick="switchTab('leadernotes', this)" style="display:none">🔒 Leadership Notes</div>
   <div class="nav-tab" onclick="switchTab('instructions', this)">📖 Instructions</div>
 </nav>
 
@@ -991,6 +991,7 @@
 
 </div>
 
+
 <!-- ═══════════════════════════════════════ DEPARTMENT DATA ENTRY ═══ -->
 <div class="main tab-content" id="tab-departments">
 
@@ -1151,13 +1152,13 @@
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.75rem">
     <div>
       <h2 style="font-family:'Nunito',sans-serif;font-weight:800;font-size:1.3rem;font-weight:400">💸 Money Rhythm</h2>
-      <p class="text-muted">Categorized income and expenses. Not accounting — a clear financial pulse at a glance.</p>
+      <p class="text-muted">Financial overview from QuickBooks. Select a year to explore.</p>
     </div>
-    <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
-      <button class="btn btn-ghost btn-sm" onclick="downloadCsvTemplate()">⬇ CSV Template</button>
-      <label class="btn btn-ghost btn-sm" style="cursor:pointer">⬆ Upload CSV<input type="file" accept=".csv" onchange="uploadCsv(event)" style="display:none"></label>
-      <button class="btn btn-ghost btn-sm" onclick="exportFinancialCsv()">⬇ Export Data</button>
-      <button class="btn btn-primary" onclick="openMoneyModal()">+ Add Entry</button>
+    <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
+      <select id="finYearSelect" onchange="renderFinanceYear()" style="border:1.5px solid var(--border);border-radius:6px;padding:0.4rem 0.8rem;font-size:0.85rem;font-family:'Nunito Sans',sans-serif;background:var(--cream);font-weight:600">
+        <option value="2026">Q1 2026</option>
+        <option value="2025">FY 2025</option>
+      </select>
     </div>
   </div>
 
@@ -1192,37 +1193,26 @@
       <div style="display:flex;gap:1.5rem;margin-bottom:1rem;font-size:0.78rem">
         <span><span class="dot-expense">●</span> Expense</span>
         <span><span class="dot-income">●</span> Income</span>
+        <span><span style="color:var(--atr-blue)">🐾</span> Adoption Income</span>
       </div>
       <div class="money-grid" id="moneyGrid"></div>
     </div>
   </div>
 
-  <!-- Detailed table -->
+  <!-- Adoption Income Detail -->
   <div class="panel">
     <div class="panel-header" onclick="togglePanel(this)">
-      <h2><span class="emoji">📋</span> All Entries</h2>
-      <div style="display:flex;gap:0.5rem;align-items:center">
-        <select id="moneyFilterType" onchange="renderMoneyTable()" style="border:1px solid var(--border);border-radius:5px;padding:0.25rem 0.5rem;font-size:0.75rem;background:var(--cream);font-family:'Nunito Sans',sans-serif">
-          <option value="">All Types</option>
-          <option value="Income">Income only</option>
-          <option value="Expense">Expenses only</option>
-        </select>
-        <select id="moneyFilterCat" onchange="renderMoneyTable()" style="border:1px solid var(--border);border-radius:5px;padding:0.25rem 0.5rem;font-size:0.75rem;background:var(--cream);font-family:'Nunito Sans',sans-serif">
-          <option value="">All Categories</option>
-        </select>
-        <span class="panel-toggle">▾</span>
-      </div>
+      <h2><span class="emoji">🐾</span> Adoption Income Detail <span style="font-size:0.75rem;font-weight:400;color:var(--slate);margin-left:0.5rem">Source: ASM</span></h2>
+      <span class="panel-toggle">▾</span>
     </div>
-    <div class="panel-body" style="padding:0;overflow-x:auto">
-      <table class="cal-table">
-        <thead><tr><th>Month</th><th>Year</th><th>Type</th><th>Category</th><th>Description</th><th>Amount ($)</th><th>Notes</th><th></th></tr></thead>
-        <tbody id="moneyTableBody"><tr class="empty-row"><td colspan="8">No entries yet.</td></tr></tbody>
-      </table>
-    </div>
+    <div class="panel-body" id="adoptionIncomePanel"></div>
   </div>
 
 </div>
 
+
+
+</div>
 <!-- ═══════════════════════════════════════ PARKING LOT ═══ -->
 <div class="main tab-content" id="tab-parking">
 
@@ -1919,7 +1909,7 @@
 // DATA STORE
 // ═══════════════════════════════════════════════════════════════
 const STORE_KEY = 'atr_dashboard_v3';
-const SEED_VERSION = 8;
+const SEED_VERSION = 9;
 
 // Employee log — loaded from CSV, lives as a constant so sessionStorage can never blank it out
 const EMPLOYEE_LOG = [{"event":"hire","date":"2026-02-21","name":"Chloe Wade","dept":"ACS","role":"ACS"},{"event":"hire","date":"2026-02-14","name":"Morgan Rye","dept":"ACS","role":"ACS"},{"event":"hire","date":"2026-01-24","name":"Jessie Hatch","dept":"ACS","role":"ACS"},{"event":"term","date":"2026-01-27","name":"Jessie Hatch","dept":"ACS","role":"ACS","tenure_days":3},{"event":"hire","date":"2026-01-31","name":"Elliot Jones","dept":"ACS","role":"ACS"},{"event":"hire","date":"2025-12-27","name":"Kelyn Adams","dept":"Adoptions","role":"FDR"},{"event":"hire","date":"2025-12-27","name":"Allie Baker","dept":"ACS","role":"ACS"},{"event":"term","date":"2026-01-11","name":"Allie Baker","dept":"ACS","role":"ACS","tenure_days":15},{"event":"hire","date":"2025-12-16","name":"Bryce Mendoza","dept":"ACS","role":"ACS"},{"event":"hire","date":"2025-09-21","name":"Melissa Smith","dept":"ACS","role":"ACS"},{"event":"term","date":"2025-11-22","name":"Melissa Smith","dept":"ACS","role":"ACS","tenure_days":62},{"event":"hire","date":"2025-09-23","name":"Sadie Henson","dept":"Adoptions","role":"FDR Supervisor"},{"event":"hire","date":"2025-09-01","name":"Maya Malave","dept":"Adoptions","role":"FDR"},{"event":"hire","date":"2025-08-03","name":"Marina Crocker","dept":"ACS","role":"ACS"},{"event":"hire","date":"2025-08-07","name":"Kadi Vanderbloemen","dept":"Medical","role":"Veterinary Coordinator"},{"event":"hire","date":"2025-07-25","name":"Natalie Strazzulla","dept":"Adoptions","role":"FDR"},{"event":"term","date":"2025-08-05","name":"Natalie Strazzulla","dept":"Adoptions","role":"FDR","tenure_days":11},{"event":"hire","date":"2025-06-16","name":"Emily Wiessel","dept":"Adoptions","role":"FDR"},{"event":"term","date":"2025-07-27","name":"Emily Wiessel","dept":"Adoptions","role":"FDR","tenure_days":41},{"event":"hire","date":"2025-06-12","name":"Lauren Johnson","dept":"Adoptions","role":"FDR"},{"event":"term","date":"2025-10-21","name":"Lauren Johnson","dept":"Adoptions","role":"FDR","tenure_days":131},{"event":"hire","date":"2025-05-23","name":"Bailey Hinkle","dept":"Adoptions","role":"FDR"},{"event":"term","date":"2025-06-11","name":"Bailey Hinkle","dept":"Adoptions","role":"FDR","tenure_days":19},{"event":"hire","date":"2025-04-06","name":"Vielka Abundiz","dept":"ACS","role":"ACS"},{"event":"term","date":"2025-08-22","name":"Vielka Abundiz","dept":"ACS","role":"ACS","tenure_days":138},{"event":"hire","date":"2025-04-03","name":"Joon Teel","dept":"ACS","role":"ACS"},{"event":"hire","date":"2025-03-04","name":"Ariana Paniagua-Guevara","dept":"Adoptions","role":"FDR"},{"event":"term","date":"2025-05-03","name":"Ariana Paniagua-Guevara","dept":"Adoptions","role":"FDR","tenure_days":60},{"event":"hire","date":"2025-02-20","name":"Caitlin Thibodeaux","dept":"Adoptions","role":"FDR"},{"event":"hire","date":"2025-01-21","name":"Trenton Clark","dept":"Adoptions","role":"FDR"},{"event":"term","date":"2025-05-26","name":"Trenton Clark","dept":"Adoptions","role":"FDR","tenure_days":125},{"event":"hire","date":"2025-01-06","name":"Marissa Galvez","dept":"Adoptions","role":"FDR"},{"event":"term","date":"2025-03-17","name":"Marissa Galvez","dept":"Adoptions","role":"FDR","tenure_days":70},{"event":"hire","date":"2024-11-12","name":"Joseph DePoy","dept":"ACS","role":"ACS"},{"event":"term","date":"2025-07-03","name":"Joseph DePoy","dept":"ACS","role":"ACS","tenure_days":233},{"event":"hire","date":"2024-10-29","name":"Daniela Apolinar","dept":"ACS","role":"Animal Care Specialist"},{"event":"term","date":"2025-12-02","name":"Daniela Apolinar","dept":"ACS","role":"Animal Care Specialist","tenure_days":399},{"event":"hire","date":"2024-09-14","name":"Kelsey Johnson","dept":"Behavior","role":"Behavior Specialist"},{"event":"term","date":"2024-11-09","name":"Kelsey Johnson","dept":"Behavior","role":"Behavior Specialist","tenure_days":56},{"event":"hire","date":"2024-07-16","name":"Lenaia McBride","dept":"Adoptions","role":"FDR"},{"event":"term","date":"2024-07-31","name":"Lenaia McBride","dept":"Adoptions","role":"FDR","tenure_days":15},{"event":"hire","date":"2024-07-09","name":"Natalie Moreno","dept":"Adoptions","role":"FDR"},{"event":"hire","date":"2024-07-08","name":"Tiffany Sendelbach","dept":"ACS","role":"ACS"},{"event":"hire","date":"2024-07-01","name":"Daniel Russell","dept":"ACS","role":"ACS"},{"event":"term","date":"2024-09-23","name":"Daniel Russell","dept":"ACS","role":"ACS","tenure_days":84},{"event":"hire","date":"2024-06-19","name":"Kyle Simmons","dept":"Foster/Volunteer","role":"Foster + Volunteer Director"},{"event":"hire","date":"2024-06-10","name":"Emily Woods","dept":"Adoptions","role":"FDR"},{"event":"term","date":"2024-06-17","name":"Emily Woods","dept":"Adoptions","role":"FDR","tenure_days":7},{"event":"hire","date":"2024-05-22","name":"Alayna Giangregorio","dept":"ACS","role":"ACS"},{"event":"term","date":"2024-06-19","name":"Alayna Giangregorio","dept":"ACS","role":"ACS","tenure_days":28},{"event":"hire","date":"2024-05-13","name":"Tina Bartholomew","dept":"Medical","role":"Medical Coordinator"},{"event":"term","date":"2025-04-29","name":"Tina Bartholomew","dept":"Medical","role":"Medical Coordinator","tenure_days":351},{"event":"hire","date":"2024-05-06","name":"Alyssa Herman","dept":"Adoptions","role":"FDR"},{"event":"term","date":"2025-06-24","name":"Alyssa Herman","dept":"Adoptions","role":"FDR","tenure_days":414},{"event":"hire","date":"2024-04-12","name":"Lucy Siemann","dept":"ACS","role":"ACS"},{"event":"term","date":"2026-02-14","name":"Lucy Siemann","dept":"ACS","role":"ACS","tenure_days":673},{"event":"hire","date":"2024-03-19","name":"Sarah Schleeper","dept":"Adoptions","role":"FDR"},{"event":"term","date":"2024-05-01","name":"Sarah Schleeper","dept":"Adoptions","role":"FDR","tenure_days":43},{"event":"hire","date":"2024-02-27","name":"Tori Burket","dept":"Adoptions","role":"FDR"},{"event":"term","date":"2024-11-01","name":"Tori Burket","dept":"Adoptions","role":"FDR","tenure_days":248},{"event":"hire","date":"2024-02-28","name":"Malorie Samano","dept":"Foster/Volunteer","role":"Foster + Volunteer Manager"},{"event":"term","date":"2024-05-22","name":"Malorie Samano","dept":"Foster/Volunteer","role":"Foster + Volunteer Manager","tenure_days":84},{"event":"hire","date":"2024-02-28","name":"Claire McDowell","dept":"Adoptions","role":"FDR"},{"event":"term","date":"2024-09-01","name":"Claire McDowell","dept":"Adoptions","role":"FDR","tenure_days":186},{"event":"hire","date":"2024-02-27","name":"Martha Brent","dept":"ACS","role":"ACS"},{"event":"term","date":"2024-05-09","name":"Martha Brent","dept":"ACS","role":"ACS","tenure_days":72},{"event":"hire","date":"2024-04-23","name":"Bailey Roth","dept":"ACS","role":"ACS"},{"event":"term","date":"2024-05-01","name":"Bailey Roth","dept":"ACS","role":"ACS","tenure_days":8},{"event":"hire","date":"2023-11-27","name":"Nikkieta Yahne","dept":"Operations","role":"Deputy Director"},{"event":"hire","date":"2023-11-13","name":"Alex Shumaker","dept":"Foster/Volunteer","role":"Foster + Volunteer Coordinator"},{"event":"term","date":"2023-12-26","name":"Alex Shumaker","dept":"Foster/Volunteer","role":"Foster + Volunteer Coordinator","tenure_days":43},{"event":"hire","date":"2023-11-06","name":"Melissa Robinson","dept":"Foster/Volunteer","role":"Foster + Volunteer Manager"},{"event":"term","date":"2024-01-22","name":"Melissa Robinson","dept":"Foster/Volunteer","role":"Foster + Volunteer Manager","tenure_days":77},{"event":"hire","date":"2023-10-23","name":"Cheyenne Espinoza","dept":"ACS","role":"ACS"},{"event":"hire","date":"2023-09-23","name":"Abigail Fischer","dept":"Behavior","role":"Behavior Specialist"},{"event":"hire","date":"2023-06-18","name":"Logan Wilke","dept":"ACS","role":"ACS"},{"event":"term","date":"2023-07-30","name":"Logan Wilke","dept":"ACS","role":"ACS","tenure_days":42},{"event":"hire","date":"2022-06-27","name":"Jacquelyn White","dept":"ACS","role":"ACS"},{"event":"term","date":"2023-08-01","name":"Jacquelyn White","dept":"ACS","role":"ACS","tenure_days":400},{"event":"hire","date":"2022-04-07","name":"Rachel Weinstein","dept":"Adoptions","role":"Adoptions Manager"},{"event":"hire","date":"2022-08-13","name":"Jakob Van Diest","dept":"ACS","role":"ACS"},{"event":"term","date":"2024-02-29","name":"Jakob Van Diest","dept":"ACS","role":"ACS","tenure_days":565},{"event":"hire","date":"2023-06-19","name":"Sarah Timpson Schleeper","dept":"Adoptions","role":"FDR"},{"event":"term","date":"2023-08-25","name":"Sarah Timpson Schleeper","dept":"Adoptions","role":"FDR","tenure_days":67},{"event":"hire","date":"2022-12-17","name":"Tina Tait","dept":"ACS","role":"ACS"},{"event":"term","date":"2023-04-02","name":"Tina Tait","dept":"ACS","role":"ACS","tenure_days":106},{"event":"hire","date":"2021-05-07","name":"Sabrina Smith","dept":"Foster/Volunteer","role":"Foster Manager"},{"event":"term","date":"2023-05-21","name":"Sabrina Smith","dept":"Foster/Volunteer","role":"Foster Manager","tenure_days":744},{"event":"hire","date":"2023-07-12","name":"Meghan Simler","dept":"ACS","role":"ACS Manager"},{"event":"hire","date":"2022-02-05","name":"Sherry Seamands","dept":"Behavior","role":"Behavior Director"},{"event":"hire","date":"2021-09-22","name":"Aundrea Robles","dept":"ACS","role":"ACS"},{"event":"term","date":"2024-02-25","name":"Aundrea Robles","dept":"ACS","role":"ACS","tenure_days":886},{"event":"hire","date":"2022-05-17","name":"Tabitha Robison","dept":"Adoptions","role":"FDR"},{"event":"term","date":"2023-12-16","name":"Tabitha Robison","dept":"Adoptions","role":"FDR","tenure_days":578},{"event":"hire","date":"2023-03-29","name":"Shawna Riley","dept":"Medical","role":"Medical Coordinator"},{"event":"term","date":"2023-05-30","name":"Shawna Riley","dept":"Medical","role":"Medical Coordinator","tenure_days":62},{"event":"hire","date":"2023-01-10","name":"Fiona Portmore","dept":"ACS","role":"ACS"},{"event":"term","date":"2023-08-15","name":"Fiona Portmore","dept":"ACS","role":"ACS","tenure_days":217},{"event":"hire","date":"2023-07-30","name":"Serena Primeau","dept":"ACS","role":"ACS Manager"},{"event":"hire","date":"2022-03-28","name":"Sylvia Padilla","dept":"Adoptions","role":"FDR"},{"event":"term","date":"2025-10-01","name":"Sylvia Padilla","dept":"Adoptions","role":"FDR","tenure_days":1283},{"event":"hire","date":"2023-07-25","name":"Berenice Nevarez","dept":"ACS","role":"ACS"},{"event":"term","date":"2023-08-11","name":"Berenice Nevarez","dept":"ACS","role":"ACS","tenure_days":17},{"event":"hire","date":"2023-08-07","name":"Alyssa McCormack","dept":"Foster/Volunteer","role":"Foster + Volunteer Manager"},{"event":"term","date":"2023-09-03","name":"Alyssa McCormack","dept":"Foster/Volunteer","role":"Foster + Volunteer Manager","tenure_days":27},{"event":"hire","date":"2021-02-22","name":"Gabriella Mavorhis","dept":"Foster/Volunteer","role":"Volunteer Manager"},{"event":"term","date":"2023-06-09","name":"Gabriella Mavorhis","dept":"Foster/Volunteer","role":"Volunteer Manager","tenure_days":837},{"event":"hire","date":"2022-07-07","name":"Courtney Lynch","dept":"Medical","role":"Animal Care Director"},{"event":"hire","date":"2023-04-26","name":"Caitlin Lindberg","dept":"ACS","role":"ACS"},{"event":"term","date":"2023-04-29","name":"Caitlin Lindberg","dept":"ACS","role":"ACS","tenure_days":3},{"event":"hire","date":"2020-10-26","name":"Heidi Richmond","dept":"Executive","role":"CEO"},{"event":"hire","date":"2023-04-10","name":"Marissa Klapper","dept":"Adoptions","role":"FDR"},{"event":"term","date":"2023-05-20","name":"Marissa Klapper","dept":"Adoptions","role":"FDR","tenure_days":40},{"event":"hire","date":"2023-08-02","name":"Joseph Herrin","dept":"ACS","role":"ACS"},{"event":"term","date":"2025-12-02","name":"Joseph Herrin","dept":"ACS","role":"ACS","tenure_days":853},{"event":"hire","date":"2023-08-29","name":"Sabrina Hernandez","dept":"Adoptions","role":"FDR"},{"event":"term","date":"2025-01-25","name":"Sabrina Hernandez","dept":"Adoptions","role":"FDR","tenure_days":515},{"event":"hire","date":"2023-06-07","name":"Kayla Hellum","dept":"ACS","role":"ACS"},{"event":"term","date":"2023-07-06","name":"Kayla Hellum","dept":"ACS","role":"ACS","tenure_days":29},{"event":"hire","date":"2023-05-22","name":"Katherine Girolami","dept":"Adoptions","role":"FDR Supervisor"},{"event":"term","date":"2025-08-09","name":"Katherine Girolami","dept":"Adoptions","role":"FDR Supervisor","tenure_days":810},{"event":"hire","date":"2022-03-22","name":"Molly Gaudreau","dept":"Events","role":"Events Manager"},{"event":"hire","date":"2021-05-17","name":"Tiffany Gallo","dept":"Foster/Volunteer","role":"Foster + Volunteer Manager"},{"event":"hire","date":"2023-07-31","name":"Ashleigh Furlanetto","dept":"Medical","role":"Medical Coordinator"},{"event":"term","date":"2024-05-07","name":"Ashleigh Furlanetto","dept":"Medical","role":"Medical Coordinator","tenure_days":281},{"event":"hire","date":"2023-05-18","name":"Kimberly Dougherty","dept":"Operations","role":"General Manager"},{"event":"term","date":"2023-08-23","name":"Kimberly Dougherty","dept":"Operations","role":"General Manager","tenure_days":97},{"event":"hire","date":"2022-06-08","name":"Kayleen Dellinger","dept":"Adoptions","role":"FDR"},{"event":"term","date":"2023-05-24","name":"Kayleen Dellinger","dept":"Adoptions","role":"FDR","tenure_days":350},{"event":"hire","date":"2022-01-03","name":"Courtney Cohen","dept":"ACS","role":"ACS"},{"event":"term","date":"2023-06-28","name":"Courtney Cohen","dept":"ACS","role":"ACS","tenure_days":541},{"event":"hire","date":"2021-05-03","name":"Tiffany Brown","dept":"Communications","role":"Communications Director"},{"event":"hire","date":"2022-12-13","name":"Makhia Arndt","dept":"ACS","role":"ACS"},{"event":"term","date":"2022-12-31","name":"Makhia Arndt","dept":"ACS","role":"ACS","tenure_days":18}];
@@ -1978,15 +1968,15 @@ const SEED_HISTORY = {
   '11-2024': { adoptions: { adoptions_month:'50', adoption_goal:'53' }, acs: { dogs_total:'137', dogs_onsite:'116', dogs_foster_report:'58'  }, foster: { dogs_foster:'58'  } },
   '12-2024': { adoptions: { adoptions_month:'33', adoption_goal:'56' }, acs: { dogs_total:'110', dogs_onsite:'91',  dogs_foster_report:'61'  }, foster: { dogs_foster:'61'  } },
   // ── 2025 ──────────────────────────────────────────────────────
-  '1-2025':  { adoptions: { adoptions_month:'39', adoption_goal:'46' }, acs: { dogs_total:'133', dogs_onsite:'120', dogs_foster_report:'79'  }, foster: { dogs_foster:'79'  } },
-  '2-2025':  { adoptions: { adoptions_month:'46', adoption_goal:'60' }, acs: { dogs_total:'147', dogs_onsite:'112', dogs_foster_report:'82'  }, foster: { dogs_foster:'82'  } },
-  '3-2025':  { adoptions: { adoptions_month:'46', adoption_goal:'69' }, acs: { dogs_total:'136', dogs_onsite:'103', dogs_foster_report:'76'  }, foster: { dogs_foster:'76'  } },
-  '4-2025':  { adoptions: { adoptions_month:'48', adoption_goal:'49' }, acs: { dogs_total:'137', dogs_onsite:'106', dogs_foster_report:'84'  }, foster: { dogs_foster:'84'  } },
-  '5-2025':  { adoptions: { adoptions_month:'73', adoption_goal:'61' }, acs: { dogs_total:'122', dogs_onsite:'98',  dogs_foster_report:'61'  }, foster: { dogs_foster:'61'  } },
-  '6-2025':  { adoptions: { adoptions_month:'41', adoption_goal:'69' }, acs: { dogs_total:'120', dogs_onsite:'99',  dogs_foster_report:'69'  }, foster: { dogs_foster:'69'  } },
-  '7-2025':  { adoptions: { adoptions_month:'52', adoption_goal:'57' }, acs: { dogs_total:'147', dogs_onsite:'127', dogs_foster_report:'76'  }, foster: { dogs_foster:'76'  } },
-  '8-2025':  { adoptions: { adoptions_month:'53', adoption_goal:'45' }, acs: { dogs_total:'151', dogs_onsite:'131', dogs_foster_report:'69'  }, foster: { dogs_foster:'69'  } },
-  '9-2025':  { adoptions: { adoptions_month:'54', adoption_goal:'51' }, acs: { dogs_total:'133', dogs_onsite:'123', dogs_foster_report:'68'  }, foster: { dogs_foster:'68'  } },
+  '1-2025':  { adoptions: { adoptions_month:'39', adoption_fee_revenue:'21320', adoption_goal:'46' }, acs: { dogs_total:'133', dogs_onsite:'120', dogs_foster_report:'79'  }, foster: { dogs_foster:'79'  } },
+  '2-2025':  { adoptions: { adoptions_month:'46', adoption_fee_revenue:'22915', adoption_goal:'60' }, acs: { dogs_total:'147', dogs_onsite:'112', dogs_foster_report:'82'  }, foster: { dogs_foster:'82'  } },
+  '3-2025':  { adoptions: { adoptions_month:'46', adoption_fee_revenue:'23910', adoption_goal:'69' }, acs: { dogs_total:'136', dogs_onsite:'103', dogs_foster_report:'76'  }, foster: { dogs_foster:'76'  } },
+  '4-2025':  { adoptions: { adoptions_month:'48', adoption_fee_revenue:'17290', adoption_goal:'49' }, acs: { dogs_total:'137', dogs_onsite:'106', dogs_foster_report:'84'  }, foster: { dogs_foster:'84'  } },
+  '5-2025':  { adoptions: { adoptions_month:'73', adoption_fee_revenue:'26065', adoption_goal:'61' }, acs: { dogs_total:'122', dogs_onsite:'98',  dogs_foster_report:'61'  }, foster: { dogs_foster:'61'  } },
+  '6-2025':  { adoptions: { adoptions_month:'41', adoption_fee_revenue:'23160', adoption_goal:'69' }, acs: { dogs_total:'120', dogs_onsite:'99',  dogs_foster_report:'69'  }, foster: { dogs_foster:'69'  } },
+  '7-2025':  { adoptions: { adoptions_month:'52', adoption_fee_revenue:'26635', adoption_goal:'57' }, acs: { dogs_total:'147', dogs_onsite:'127', dogs_foster_report:'76'  }, foster: { dogs_foster:'76'  } },
+  '8-2025':  { adoptions: { adoptions_month:'53', adoption_fee_revenue:'29535', adoption_goal:'45' }, acs: { dogs_total:'151', dogs_onsite:'131', dogs_foster_report:'69'  }, foster: { dogs_foster:'69'  } },
+  '9-2025':  { adoptions: { adoptions_month:'54', adoption_fee_revenue:'32350', adoption_goal:'51' }, acs: { dogs_total:'133', dogs_onsite:'123', dogs_foster_report:'68'  }, foster: { dogs_foster:'68'  } },
   '10-2025': {
     adoptions: { adoptions_month:'45', adoptions_first_avail:'5', adoptions_open_event:'16', adoptions_foster_ref:'6', puppies_adopted:'39', mamas_adopted:'5', returned_adults_adopted:'0', adoption_fee_revenue:'20300', returns_30day:'2', adoption_goal:'54' },
     comms:     { ig_views:'1200000', ig_new_followers:'713', content_pieces:'208', link_clicks:'487' },
@@ -2011,7 +2001,7 @@ const SEED_HISTORY = {
   },
   // ── 2026 ──────────────────────────────────────────────────────
   '1-2026': {
-    adoptions:  { adoptions_month:'31', adoptions_first_avail:'10', adoptions_foster_ref:'2', puppies_adopted:'17', teens_adopted:'8', mamas_adopted:'4', returns_30day:'4', returned_adults_adopted:'2', adoption_goal:'46' },
+    adoptions:  { adoptions_month:'31', adoptions_first_avail:'10', adoptions_foster_ref:'2', puppies_adopted:'17', teens_adopted:'8', mamas_adopted:'4', returns_30day:'4', returned_adults_adopted:'2', adoption_fee_revenue:'11335', adoption_goal:'46' },
     volunteers: { vol_hours:'611.54', new_volunteers:'22', vols_logged_hours:'102', active_vols:'288', pct_active_onsite:'35.42', fear_free_certified:'57' },
     foster:     { dogs_foster:'54', dogs_fostered_month:'35', new_fosters:'13' },
     comms:      { ig_followers:'38104', ig_views:'1200000', ig_accounts_reached:'143200', ig_interactions:'27100', ig_new_followers:'677', content_pieces:'312', link_clicks:'965' },
@@ -2019,7 +2009,7 @@ const SEED_HISTORY = {
     acs:        { staff_headcount:'12', dogs_total:'146', dogs_onsite:'112', dogs_foster_report:'54' },
   },
   '2-2026': {
-    adoptions:  { adoptions_month:'30', adoptions_first_avail:'20', adoptions_foster_ref:'2', puppies_adopted:'24', teens_adopted:'2', mamas_adopted:'4', returns_30day:'1', returned_adults_adopted:'1', staff_headcount:'6', adoption_goal:'60' },
+    adoptions:  { adoptions_month:'30', adoptions_first_avail:'20', adoptions_foster_ref:'2', puppies_adopted:'24', teens_adopted:'2', mamas_adopted:'4', returns_30day:'1', returned_adults_adopted:'1', staff_headcount:'6', adoption_fee_revenue:'16256', adoption_goal:'60' },
     volunteers: { vol_hours:'696.54', new_volunteers:'28', vols_logged_hours:'129', active_vols:'313', pct_active_onsite:'41.21', fear_free_certified:'61' },
     foster:     { dogs_foster:'65', dogs_fostered_month:'39', new_fosters:'7' },
     comms:      { ig_followers:'38411', ig_views:'1000000', ig_accounts_reached:'50800', ig_interactions:'30000', ig_new_followers:'645', content_pieces:'312', link_clicks:'631' },
@@ -2027,9 +2017,12 @@ const SEED_HISTORY = {
     acs:        { staff_headcount:'11', dogs_total:'135', dogs_onsite:'104', dogs_foster_report:'65', staff_hours_month:'938.10', hrs_per_dog:'16.17' },
   },
   '3-2026': {
-    adoptions: { adoptions_month:'38', adoption_goal:'69' },
+    adoptions: { adoptions_month:'38', adoption_fee_revenue:'17865', adoption_goal:'69' },
     acs:       { dogs_total:'135', dogs_onsite:'99', dogs_foster_report:'78' },
     foster:    { dogs_foster:'78' },
+  },
+  '4-2026': {
+    adoptions: { adoption_fee_revenue:'17115' },
   },
 };
 
@@ -2068,11 +2061,21 @@ function seedHistoricalData() {
     return;
   }
 
-  // Write seed history — only fill gaps, never overwrite user entries
+  // Write seed history — fill gaps at field level, never overwrite user entries
   Object.entries(SEED_HISTORY).forEach(([mk, depts]) => {
     if (!store.history[mk]) store.history[mk] = {};
     Object.entries(depts).forEach(([deptId, data]) => {
-      if (!store.history[mk][deptId]) store.history[mk][deptId] = data;
+      if (!store.history[mk][deptId]) {
+        store.history[mk][deptId] = data;
+      } else {
+        // Field-level merge: only fill in keys that are missing
+        Object.entries(data).forEach(([fieldKey, fieldVal]) => {
+          if (store.history[mk][deptId][fieldKey] === undefined ||
+              store.history[mk][deptId][fieldKey] === '') {
+            store.history[mk][deptId][fieldKey] = fieldVal;
+          }
+        });
+      }
     });
   });
 
@@ -3411,33 +3414,137 @@ function deleteFocus(idx) {
 
 // ═══════════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════════
-// MONEY RHYTHM — categorized with CSV import/export
+// MONEY RHYTHM — QuickBooks data
 // ═══════════════════════════════════════════════════════════════
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-const INCOME_CATS  = ['Adoptions','Events / Fundraisers','Grants','Individual Donations','Merchandise','Sponsorships','Other Income'];
-const EXPENSE_CATS = ['Animal Care (food, supplies, leashes)','Events','Facilities','Maintenance','Marketing / Comms','Medical / Vet','Operations / Supplies','Payroll / HR','Utilities','Other Expense'];
+// ── QuickBooks source data ──────────────────────────────────────
+const QB_DATA = {
+  '2025': {
+    label: 'FY 2025 · Accrual Basis',
+    totalIncome:   1445163.52,
+    totalExpenses: 1465835.24,
+    netIncome:     -34578.06,
+    months: {
+      January:   { income: 129150.55, expense: 126505.15, adoptions: 21320.00 },
+      February:  { income:  81729.00, expense: 137020.73, adoptions: 22915.00 },
+      March:     { income: 101229.45, expense: 104621.46, adoptions: 23910.00 },
+      April:     { income: 146700.29, expense: 118534.51, adoptions: 17290.00 },
+      May:       { income: 130583.57, expense: 155836.67, adoptions: 26065.00 },
+      June:      { income: 131660.85, expense:  99526.49, adoptions: 23160.00 },
+      July:      { income:  81237.13, expense: 123155.38, adoptions: 26635.00 },
+      August:    { income: 171829.07, expense: 129250.56, adoptions: 29535.00 },
+      September: { income: 118259.47, expense: 126647.45, adoptions: 32350.00 },
+      October:   { income:  80159.10, expense: 124324.59, adoptions: 20130.00 },
+      November:  { income:  69620.90, expense: 103638.95, adoptions: 11940.00 },
+      December:  { income: 203004.14, expense: 116773.30, adoptions: 19960.00 },
+    },
+    adoptionTotal: 275210.00,
+    income: [
+      { cat: 'Donations',          amt: 690795.17 },
+      { cat: 'Fundraising Events', amt: 355371.78 },
+      { cat: 'Adoption Fees',      amt: 284474.01 },
+      { cat: 'Merchandise Sales',  amt:  93189.16 },
+      { cat: 'Subscriptions',      amt:  14241.00 },
+      { cat: 'Grant Income',       amt:   6455.37 },
+      { cat: 'Other Income',       amt:    637.00 },
+    ],
+    expenses: [
+      { cat: 'Salaries & Wages',          amt: 887558.88 },
+      { cat: 'Dog Care (Medical/Vet/Food)',amt: 259146.28 },
+      { cat: 'Payroll Taxes',             amt:  90315.76 },
+      { cat: 'Utilities',                 amt:  54749.54 },
+      { cat: 'Fundraising Costs',         amt:  49058.86 },
+      { cat: 'Janitorial & Supplies',     amt:  28654.60 },
+      { cat: 'Insurance',                 amt:  28260.29 },
+      { cat: 'Accounting Fees',           amt:  15000.00 },
+      { cat: 'Merchandise COGS',          amt:  13906.34 },
+      { cat: 'Other Mgmt & General',      amt:  38773.69 },
+    ],
+  },
+  '2026': {
+    label: 'Q1 2026 · Jan–Apr · Cash Basis',
+    totalIncome:    358302.86,
+    totalExpenses:  332815.95,
+    netIncome:       21595.15,
+    months: {
+      January:  { income: 204606.77, expense: 111547.75, adoptions: 11335.00 },
+      February: { income:  71395.10, expense: 114453.99, adoptions: 16256.00 },
+      March:    { income:  82300.99, expense: 106814.21, adoptions: 17865.00 },
+      April:    { income: null,      expense: null,       adoptions: 17115.00 },
+    },
+    adoptionTotal: 62571.00,
+    income: [
+      { cat: 'Donations',            amt: 208517.78 },
+      { cat: 'Fundraising Events',   amt:  59693.87 },
+      { cat: 'Adoption Fees',        amt:  46026.00 },
+      { cat: 'Miscellaneous Income', amt:  36602.87 },
+      { cat: 'Merchandise Sales',    amt:   3993.60 },
+      { cat: 'Subscriptions',        amt:   2910.00 },
+      { cat: 'Grant Income',         amt:    558.74 },
+    ],
+    expenses: [
+      { cat: 'Salaries & Wages',           amt: 217873.64 },
+      { cat: 'Dog Care (Medical/Vet/Food)', amt:  45679.77 },
+      { cat: 'Payroll Taxes',              amt:  17996.50 },
+      { cat: 'Fundraising Costs',          amt:  21523.05 },
+      { cat: 'Management & General',       amt:  16925.30 },
+      { cat: 'Utilities',                  amt:   9843.63 },
+      { cat: 'Insurance',                  amt:   9010.28 },
+      { cat: 'Janitorial & Supplies',      amt:   3470.03 },
+      { cat: 'Merchandise COGS',           amt:   3891.76 },
+    ],
+  },
+};
 
-function openMoneyModal() {
-  // Populate year dropdown
-  const yearSel = document.getElementById('money-year');
-  if (yearSel && !yearSel.options.length) {
-    const cy = new Date().getFullYear();
-    for (let y = cy + 1; y >= cy - 3; y--) yearSel.innerHTML += `<option value="${y}" ${y===cy?'selected':''}>${y}</option>`;
-  }
-  // Set month to current
-  const monthSel = document.getElementById('money-month');
-  if (monthSel) monthSel.value = MONTHS[new Date().getMonth()];
-  updateMoneyCategoryOptions();
-  document.getElementById('moneyModal').classList.add('open');
+function getFinYear() {
+  return document.getElementById('finYearSelect')?.value || '2026';
 }
 
-function updateMoneyCategoryOptions() {
-  const type = document.getElementById('money-type')?.value;
-  const catSel = document.getElementById('money-category');
-  if (!catSel) return;
-  const cats = type === 'Income' ? INCOME_CATS : EXPENSE_CATS;
-  catSel.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+function renderFinanceYear() {
+  renderMoneySummary();
+  renderMoneyGrid();
+  renderAdoptionPanel();
+}
+
+function renderAdoptionPanel() {
+  const el = document.getElementById('adoptionIncomePanel');
+  if (!el) return;
+  const yr = getFinYear();
+  const data = QB_DATA[yr];
+  if (!data) return;
+
+  const monthEntries = Object.entries(data.months)
+    .filter(([, md]) => md.adoptions != null)
+    .map(([name, md]) => ({ name, amt: md.adoptions }));
+
+  const total = data.adoptionTotal || monthEntries.reduce((s, m) => s + m.amt, 0);
+  const maxAmt = Math.max(...monthEntries.map(m => m.amt));
+
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem">
+      <div>
+        <span style="font-family:'Nunito',sans-serif;font-weight:800;font-size:1.6rem;color:var(--atr-blue)">$${fmtNum(Math.round(total))}</span>
+        <span style="font-size:0.78rem;color:var(--slate);margin-left:0.5rem">total adoption income · ${data.label.split('·')[0].trim()}</span>
+      </div>
+      <div style="font-size:0.75rem;color:var(--brown-light)">${monthEntries.length} months of data</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0.45rem">
+      ${monthEntries.map(m => {
+        const pct = Math.round(m.amt / maxAmt * 100);
+        const sharePct = Math.round(m.amt / total * 100);
+        return `<div>
+          <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:0.18rem">
+            <span style="font-weight:500">${m.name}</span>
+            <span style="font-weight:700;color:var(--atr-blue)">$${fmtNum(Math.round(m.amt))} <span style="color:var(--brown-light);font-weight:400;font-size:0.72rem">(${sharePct}%)</span></span>
+          </div>
+          <div style="background:var(--border);border-radius:4px;height:7px">
+            <div style="background:var(--atr-blue);height:7px;border-radius:4px;width:${pct}%"></div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="font-size:0.72rem;color:var(--brown-light);margin-top:0.75rem">Note: ASM adoption income totals may differ slightly from QuickBooks adoption fee figures due to payment processing timing and method differences.</div>`;
 }
 
 function buildMoneyGrid() {
@@ -3451,78 +3558,59 @@ function buildMoneyGrid() {
 }
 
 function renderMoneyGrid() {
+  const yr = getFinYear();
+  const data = QB_DATA[yr];
   MONTHS.forEach(m => {
     const el = document.getElementById('mm-items-' + m);
     if (!el) return;
-    const items = (store.moneyItems || []).filter(i => i.month === m);
-    if (!items.length) { el.innerHTML = '<div style="font-size:0.68rem;color:#ccc">—</div>'; return; }
-    el.innerHTML = items.map(i =>
-      `<div class="money-item"><span class="${i.type === 'Expense' ? 'dot-expense' : 'dot-income'}">●</span>${i.item}</div>`
-    ).join('');
+    const md = data?.months[m];
+    if (!md) { el.innerHTML = '<div style="font-size:0.68rem;color:#ccc">—</div>'; return; }
+    const net = md.income != null && md.expense != null ? md.income - md.expense : null;
+    const netColor = net == null ? 'var(--brown-light)' : net >= 0 ? 'var(--sage)' : 'var(--rose)';
+    const adoptionLine = md.adoptions != null
+      ? `<div style="font-size:0.68rem;color:var(--atr-blue);margin-top:0.15rem">🐾 $${fmtNum(Math.round(md.adoptions))}</div>`
+      : '';
+    el.innerHTML = `
+      ${md.income != null ? `<div class="money-item"><span class="dot-income">●</span>$${fmtNum(Math.round(md.income))}</div>` : ''}
+      ${md.expense != null ? `<div class="money-item"><span class="dot-expense">●</span>$${fmtNum(Math.round(md.expense))}</div>` : ''}
+      ${net != null ? `<div style="font-size:0.68rem;font-weight:700;color:${netColor};margin-top:0.15rem">${net>=0?'+':''}$${fmtNum(Math.round(net))}</div>` : ''}
+      ${adoptionLine}`;
   });
 }
 
-function renderMoneyTable() {
-  const body = document.getElementById('moneyTableBody');
-  if (!body) return;
-  const filterType = document.getElementById('moneyFilterType')?.value || '';
-  const filterCat  = document.getElementById('moneyFilterCat')?.value  || '';
-  let items = store.moneyItems || [];
-  if (filterType) items = items.filter(i => i.type === filterType);
-  if (filterCat)  items = items.filter(i => i.category === filterCat);
-  if (!items.length) { body.innerHTML = '<tr class="empty-row"><td colspan="8">No entries match.</td></tr>'; return; }
-  body.innerHTML = items.map((it, i) => {
-    const origIdx = (store.moneyItems || []).indexOf(it);
-    const amtStr = it.amount !== undefined && it.amount !== '' ? '$' + Number(it.amount).toLocaleString() : it.range || '—';
-    return `<tr>
-      <td>${it.month}</td>
-      <td>${it.year || '—'}</td>
-      <td><span class="cal-badge ${it.type === 'Expense' ? 'badge-high' : 'badge-money'}">${it.type}</span></td>
-      <td style="font-size:0.78rem;color:var(--slate)">${it.category || '—'}</td>
-      <td>${it.item}</td>
-      <td style="font-weight:600;color:${it.type==='Income'?'var(--sage)':'var(--rose)'}">${amtStr}</td>
-      <td style="font-size:0.75rem;color:var(--slate);max-width:160px">${it.notes || ''}</td>
-      <td><button onclick="deleteMoneyItem(${origIdx})" style="background:none;border:none;cursor:pointer;color:var(--rose);font-size:0.9rem">✕</button></td>
-    </tr>`;
-  }).join('');
-}
+function renderMoneyTable() { /* no-op — All Entries removed */ }
 
 function renderMoneySummary() {
-  const items = store.moneyItems || [];
-  const cy = new Date().getFullYear();
-  const ytdIncome  = items.filter(i => i.type === 'Income'  && String(i.year) === String(cy)).reduce((s,i) => s + (Number(i.amount)||0), 0);
-  const ytdExpense = items.filter(i => i.type === 'Expense' && String(i.year) === String(cy)).reduce((s,i) => s + (Number(i.amount)||0), 0);
-  const net = ytdIncome - ytdExpense;
+  const yr = getFinYear();
+  const data = QB_DATA[yr];
+  if (!data) return;
 
+  const net = data.netIncome;
   const tilesEl = document.getElementById('moneySummaryTiles');
   if (tilesEl) {
     tilesEl.innerHTML = [
-      { label: `${cy} Total Income`,  val: '$' + ytdIncome.toLocaleString(),  color: 'var(--sage)' },
-      { label: `${cy} Total Expenses`,val: '$' + ytdExpense.toLocaleString(), color: 'var(--rose)' },
-      { label: `${cy} Net`,           val: (net >= 0 ? '+' : '') + '$' + net.toLocaleString(), color: net >= 0 ? 'var(--sage)' : 'var(--rose)' },
-      { label: 'Total Entries',       val: items.length, color: 'var(--brown-mid)' },
+      { label: 'Total Income',   val: '$' + fmtNum(Math.round(data.totalIncome)),   color: 'var(--sage)' },
+      { label: 'Total Expenses', val: '$' + fmtNum(Math.round(data.totalExpenses)), color: 'var(--rose)' },
+      { label: 'Net Income',     val: (net>=0?'+':'') + (net<0?'(':'') + '$' + fmtNum(Math.round(Math.abs(net))) + (net<0?')':''), color: net>=0?'var(--sage)':'var(--rose)' },
+      { label: 'Period',         val: data.label.split('·')[0].trim(), color: 'var(--brown-mid)' },
     ].map(t => `<div style="background:white;border:1px solid var(--border);border-radius:10px;padding:0.9rem 1.1rem;text-align:center;box-shadow:0 1px 4px var(--shadow)">
-      <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:1.6rem;color:${t.color};line-height:1">${t.val}</div>
+      <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:1.5rem;color:${t.color};line-height:1">${t.val}</div>
       <div style="font-size:0.72rem;color:var(--brown-light);text-transform:uppercase;letter-spacing:0.06em;margin-top:0.25rem">${t.label}</div>
     </div>`).join('');
   }
 
-  // Category breakdowns
-  const renderBreakdown = (elId, type, cats) => {
+  // Category breakdowns with bar charts
+  const renderBreakdown = (elId, items, type) => {
     const el = document.getElementById(elId);
     if (!el) return;
-    const yearItems = items.filter(i => i.type === type && String(i.year) === String(cy));
-    const total = yearItems.reduce((s,i) => s + (Number(i.amount)||0), 0);
-    if (!total) { el.innerHTML = '<div class="text-muted" style="font-size:0.8rem">No data yet for this year.</div>'; return; }
-    el.innerHTML = cats.map(cat => {
-      const catTotal = yearItems.filter(i => i.category === cat).reduce((s,i) => s + (Number(i.amount)||0), 0);
-      if (!catTotal) return '';
-      const pct = Math.round(catTotal / total * 100);
-      const color = type === 'Income' ? 'var(--sage)' : 'var(--rose)';
+    const total = items.reduce((s, i) => s + i.amt, 0);
+    const color = type === 'income' ? 'var(--sage)' : 'var(--rose)';
+    el.innerHTML = items.map(i => {
+      const pct = Math.round(i.amt / total * 100);
       return `<div style="margin-bottom:0.55rem">
         <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:0.2rem">
-          <span>${cat}</span>
-          <span style="font-weight:600">$${catTotal.toLocaleString()} <span style="color:var(--brown-light);font-weight:400">(${pct}%)</span></span>
+          <span>${i.cat}</span>
+          <span style="font-weight:600">$${fmtNum(Math.round(i.amt))} <span style="color:var(--brown-light);font-weight:400">(${pct}%)</span></span>
         </div>
         <div style="background:var(--border);border-radius:4px;height:6px">
           <div style="background:${color};height:6px;border-radius:4px;width:${pct}%"></div>
@@ -3530,16 +3618,8 @@ function renderMoneySummary() {
       </div>`;
     }).join('');
   };
-  renderBreakdown('incomeBreakdown',  'Income',  INCOME_CATS);
-  renderBreakdown('expenseBreakdown', 'Expense', EXPENSE_CATS);
-
-  // Update category filter dropdown
-  const catFilter = document.getElementById('moneyFilterCat');
-  if (catFilter && catFilter.options.length <= 1) {
-    [...INCOME_CATS, ...EXPENSE_CATS].forEach(c => {
-      catFilter.innerHTML += `<option value="${c}">${c}</option>`;
-    });
-  }
+  renderBreakdown('incomeBreakdown',  data.income,   'income');
+  renderBreakdown('expenseBreakdown', data.expenses, 'expense');
 }
 
 function saveMoneyItem() {
@@ -3979,7 +4059,7 @@ function switchTab(tabId, el) {
   el.classList.add('active');
   if (tabId === 'analytics') { updateYOYYearPicker(); renderYOY(); renderHistoryLog(); }
   if (tabId === 'departments') { initMonthSelector(); buildDeptEntryGrid(); }
-  if (tabId === 'finance') { renderMoneyTable(); renderMoneySummary(); }
+  if (tabId === 'finance') { renderFinanceYear(); }
   if (tabId === 'allhands') { initAllHands(); }
   if (tabId === 'leadernotes') { lnInit(); }
 }
